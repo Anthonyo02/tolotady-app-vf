@@ -1,0 +1,58 @@
+// import { Equipment } from "@/types/inventory";
+
+// export const initialEquipment: Equipment[] = [
+//   {
+//     id: "1",
+//     name: "Lumix GH4",
+//     totalQuantity: 2,
+//     noentina: 1,
+//     najanona: 1,
+//     nampindramina: 0,
+//     responsible: "Mr Diot",
+//   },
+//   {
+//     id: "2",
+//     name: "Trépied Manfrotto",
+//     totalQuantity: 3,
+//     noentina: 3,
+//     najanona: 0,
+//     nampindramina: 0,
+//     responsible: "Mr Thony",
+//   },
+//   {
+//     id: "3",
+//     name: "Micro Rode VideoMic",
+//     totalQuantity: 1,
+//     noentina: 0,
+//     najanona: 0,
+//     nampindramina: 1,
+//     responsible: "Mme Aina",
+//   },
+//   {
+//     id: "4",
+//     name: "LED Aputure 120D",
+//     totalQuantity: 4,
+//     noentina: 2,
+//     najanona: 2,
+//     nampindramina: 0,
+//     responsible: "Mr Miary",
+//   },
+//   {
+//     id: "5",
+//     name: "Stabilisateur DJI RS3",
+//     totalQuantity: 2,
+//     noentina: 1,
+//     najanona: 0,
+//     nampindramina: 1,
+//     responsible: "Mr Diot",
+//   },
+//   {
+//     id: "6",
+//     name: "Objectif Canon 24-70mm",
+//     totalQuantity: 2,
+//     noentina: 0,
+//     najanona: 2,
+//     nampindramina: 0,
+//     responsible: "Mr Thony",
+//   },
+// ];
