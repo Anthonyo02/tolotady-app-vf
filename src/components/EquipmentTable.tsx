@@ -37,8 +37,8 @@ interface Props {
   onEdit: (item: Equipment) => void;
 }
 
-const API_URL ="https://script.google.com/macros/s/AKfycbwzATj2nIFTZb7Ptb60cXoWbjtVV0DHYQkUnnCLqhlNaps1yStrDxuk7Ql9Wx954oFY/exec";
-
+const API_URL =
+  "https://script.google.com/macros/s/AKfycbwzATj2nIFTZb7Ptb60cXoWbjtVV0DHYQkUnnCLqhlNaps1yStrDxuk7Ql9Wx954oFY/exec";
 
 export default function EquipmentTable({
   equipment,
@@ -74,38 +74,34 @@ export default function EquipmentTable({
   // =========================
   // Delete
   // =========================
-const deleteItem = async () => {
-  if (!deleteId || isDeleting) return;
+  const deleteItem = async () => {
+    if (!deleteId || isDeleting) return;
 
-  setIsDeleting(true);
+    setIsDeleting(true);
 
-  try {
-    await fetch(API_URL, {
-      method: "POST",
-      mode: "no-cors", // 👈 important
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        action: "delete",
-        id: deleteId,
-      }),
-    });
+    try {
+      await fetch(API_URL, {
+        method: "POST",
+        mode: "no-cors", // 👈 important
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "delete",
+          id: deleteId,
+        }),
+      });
 
-    setDeleteId(null);
-    setShow(true);
-    reload(true);
-
-  } catch (err) {
-    console.error(err);
-    alert("Erreur lors de la suppression");
-  } finally {
-    setIsDeleting(false);
-  }
-};
-
-
-
+      setDeleteId(null);
+      setShow(true);
+      reload(true);
+    } catch (err) {
+      console.error(err);
+      alert("Erreur lors de la suppression");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   // =========================
   // Empty state
@@ -144,7 +140,7 @@ const deleteItem = async () => {
               </TableRow>
             )}
 
-            {equipment.map((item ,index) => (
+            {equipment.map((item, index) => (
               <TableRow key={item.id || index}>
                 <TableCell className="font-medium">{item.name}</TableCell>
 
@@ -198,7 +194,20 @@ const deleteItem = async () => {
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button size="icon" variant="ghost">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        disabled={!navigator.onLine}
+                        className={`
+    transition-colors duration-300
+    ${
+      navigator.onLine
+        ? "hover:bg-gray-100" // couleur hover normale
+        : "cursor-not-allowed hover:bg-transparent opacity-50"
+    }
+  `}
+                        title={!navigator.onLine ? "Vous êtes hors ligne" : ""}
+                      >
                         <MoreHorizontal className="w-4 h-4" />
                       </Button>
                     </DropdownMenuTrigger>

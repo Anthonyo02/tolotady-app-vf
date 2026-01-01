@@ -60,8 +60,10 @@ const Index = () => {
     const localData = localStorage.getItem(STORAGE_KEY);
     if (localData) {
       try {
+        setShow(false)
         setEquipment(JSON.parse(localData));
       } catch (e) {
+        setShow(false)
         console.error("Erreur parsing localStorage", e);
       }
     }
@@ -82,7 +84,8 @@ const Index = () => {
       const localData = localStorage.getItem(STORAGE_KEY);
       const parsedLocal = localData ? JSON.parse(localData) : null;
       setShow(false);
-      setMessage("Données mises à jour");
+      // setShowSuccess(true)
+      // setMessage("Données misour");
 
       if (!parsedLocal || !isSameData(parsedLocal, reversedData)) {
         setEquipment(reversedData);
@@ -93,11 +96,12 @@ const Index = () => {
       }
     } catch (error) {
       console.error("Erreur fetch:", error);
+      setShow(false)
     } finally {
       setShow(false);
       setIsRefreshing(false);
       setLoading(false);
-      setShowSuccess(true);
+      // setShowSuccess(true);
     }
   };
 
@@ -225,26 +229,25 @@ const Index = () => {
               </div>
 
               <Button
-                style={{
-                  background: "#6B6C33",
-                  transition: "background 0.3s",
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.background =
-                    "#7C7D3D"; // couleur hover
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.background =
-                    "#929439ff"; // couleur normale
-                }}
                 onClick={() => {
                   setEditingEquipment(null);
                   setIsModalOpen(true);
                 }}
                 disabled={!navigator.onLine}
+                className={`
+    flex items-center px-4 py-2 rounded 
+    text-white font-medium transition-colors duration-300
+    ${
+      navigator.onLine
+        ? "bg-[#6B6C33] hover:bg-[#7C7D3D]" // en ligne → couleur normale + hover
+        : "bg-gray-400 cursor-not-allowed hover:bg-gray-400"
+    } // hors ligne → grisé
+  `}
               >
-                <Plus className="mr-2 h-4 w-4 text-white" />
-                <span className="text-white">Ajouter un matériel</span>
+                <Plus className="mr-2 h-4 w-4" />
+                <span>
+                  {navigator.onLine ? "Ajouter un matériel" : "Hors ligne"}
+                </span>
               </Button>
             </Grid>
 
