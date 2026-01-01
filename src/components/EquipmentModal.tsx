@@ -30,7 +30,8 @@ interface EquipmentModalProps {
   setShow: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const API_URL = "https://script.google.com/macros/s/AKfycbxdpPxqHw4eC_pndM5exhYIGKuSSpMJ-3CdyZYS3Agge35vBF9QvvP-DGjVs-zUf1Is/exec";
+const API_URL =
+  "https://script.google.com/macros/s/AKfycbwzATj2nIFTZb7Ptb60cXoWbjtVV0DHYQkUnnCLqhlNaps1yStrDxuk7Ql9Wx954oFY/exec";
 
 const EquipmentModal = ({
   isOpen,
@@ -94,65 +95,79 @@ const EquipmentModal = ({
       responsable: RESPONSABLES[0],
     });
   };
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  if (isLoading) return;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isLoading) return;
 
-  setIsLoading(true);
-  const action = formData.id ? "update" : "add";
+    setIsLoading(true);
+    const action = formData.id ? "update" : "add";
 
-  try {
-    // Préparer les données à envoyer
-    const payload: any = { action, ...formData };
-    if (action === "add") {
-      delete payload.id; // ne pas envoyer l'id lors de l'ajout
+    try {
+      // Préparer les données à envoyer
+      const payload: any = { action, ...formData };
+      if (action === "add") {
+        delete payload.id; // ne pas envoyer l'id lors de l'ajout
+      }
+
+      const res = await fetch(API_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      // const result = await res.json();
+      // if (!result.success) throw new Error(result.error);
+
+      toast({
+        title: `Matériel ${
+          action === "add" ? "ajouté" : "modifié"
+        } avec succès`,
+      });
+
+      setShow(true);
+      reload(true);
+      onClose();
+      resetForm();
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: "Erreur",
+        description: "Impossible d'enregistrer le matériel",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
-
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    const result = await res.json();
-    if (!result.success) throw new Error(result.error);
-
-    toast({
-      title: `Matériel ${action === "add" ? "ajouté" : "modifié"} avec succès`,
-    });
-
-    setShow(true);
-    reload(true);
-    onClose();
-    resetForm();
-  } catch (err) {
-    console.error(err);
-    toast({
-      title: "Erreur",
-      description: "Impossible d'enregistrer le matériel",
-      variant: "destructive",
-    });
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={isLoading ? undefined : onClose}>
       <DialogContent className="bg-card border-border max-w-md">
         <DialogHeader>
+          <DialogTitle className="sr-only">
+            {equipment ? "Modifier le matériel" : "Ajouter un nouveau matériel"}
+          </DialogTitle>
+
           <Grid container justifyContent={"center"} my={2}>
-            <Typography variant="h5" component="h2" fontFamily={"unset"} fontWeight={'bold'}>
+            <Typography
+              variant="h5"
+              component="h2"
+              fontFamily={"unset"}
+              fontWeight={"bold"}
+            >
               {equipment
                 ? "Modifier le matériel"
                 : "Ajouter un nouveau matériel"}
-            </Typography >
+            </Typography>
           </Grid>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <Grid container columnSpacing={4} direction={"row"}>
-            <Grid container size={{ xs: 9 }} gap={1} direction={"column"} >
+            <Grid container size={{ xs: 9 }} gap={1} direction={"column"}>
               <Label>Nom du matériel</Label>
               <Input
                 value={formData.name}
@@ -162,7 +177,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                 disabled={isLoading}
               />
             </Grid>
-            <Grid container size={{ xs: 3 }} gap={1} direction={"column"} >
+            <Grid container size={{ xs: 3 }} gap={1} direction={"column"}>
               <Label>Total</Label>
               <Input value={formData.totalQuantity} disabled />
             </Grid>
@@ -206,7 +221,7 @@ const handleSubmit = async (e: React.FormEvent) => {
             justifyContent={"center"}
             alignContent={"center"}
           >
-            <Grid container size={{ xs: 9 }} gap={1} direction={"column"} >
+            <Grid container size={{ xs: 9 }} gap={1} direction={"column"}>
               <Label>Preteur</Label>
               <Input
                 value={formData.preteur}
@@ -216,7 +231,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                 disabled={isLoading}
               />
             </Grid>
-            <Grid container size={{ xs: 3 }} gap={1} direction={"column"} >
+            <Grid container size={{ xs: 3 }} gap={1} direction={"column"}>
               <Label>Qté prêt</Label>
               <Input
                 type="number"

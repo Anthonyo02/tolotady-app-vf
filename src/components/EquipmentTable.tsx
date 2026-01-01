@@ -37,9 +37,7 @@ interface Props {
   onEdit: (item: Equipment) => void;
 }
 
-const API_URL = import.meta.env.DEV
-  ? "/api"
-  : "https://script.google.com/macros/s/AKfycbxdpPxqHw4eC_pndM5exhYIGKuSSpMJ-3CdyZYS3Agge35vBF9QvvP-DGjVs-zUf1Is/exec";
+const API_URL ="https://script.google.com/macros/s/AKfycbwzATj2nIFTZb7Ptb60cXoWbjtVV0DHYQkUnnCLqhlNaps1yStrDxuk7Ql9Wx954oFY/exec";
 
 
 export default function EquipmentTable({
@@ -76,28 +74,38 @@ export default function EquipmentTable({
   // =========================
   // Delete
   // =========================
-  const deleteItem = async () => {
-    if (!deleteId || isDeleting) return;
-    setIsDeleting(true);
+const deleteItem = async () => {
+  if (!deleteId || isDeleting) return;
 
-    try {
-      const res = await fetch("/api", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "delete", id: deleteId }),
-      });
+  setIsDeleting(true);
 
-      const result = await res.json();
-      if (!result.success) throw new Error();
-      setShow(true);
-      setDeleteId(null);
-      reload(true);
-    } catch {
-      alert("Erreur suppression");
-    } finally {
-      setIsDeleting(false);
-    }
-  };
+  try {
+    await fetch(API_URL, {
+      method: "POST",
+      mode: "no-cors", // 👈 important
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        action: "delete",
+        id: deleteId,
+      }),
+    });
+
+    setDeleteId(null);
+    setShow(true);
+    reload(true);
+
+  } catch (err) {
+    console.error(err);
+    alert("Erreur lors de la suppression");
+  } finally {
+    setIsDeleting(false);
+  }
+};
+
+
+
 
   // =========================
   // Empty state
@@ -136,8 +144,8 @@ export default function EquipmentTable({
               </TableRow>
             )}
 
-            {equipment.map((item) => (
-              <TableRow key={item.id}>
+            {equipment.map((item ,index) => (
+              <TableRow key={item.id || index}>
                 <TableCell className="font-medium">{item.name}</TableCell>
 
                 <TableCell className="text-center">

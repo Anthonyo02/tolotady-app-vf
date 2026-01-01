@@ -34,53 +34,7 @@ const WifiBars = ({ level }: { level: 1 | 2 | 3 | 4 }) => {
 };
 
 /* ===== Header ===== */
-const Header = () => {
-  const [wifiLevel, setWifiLevel] = useState<1 | 2 | 3 | 4>(2);
-
-  useEffect(() => {
-    let interval: ReturnType<typeof setInterval>;
-
-    const checkConnection = async () => {
-      if (!navigator.onLine) {
-        setWifiLevel(1);
-        return;
-      }
-
-      try {
-        const res = await fetch("/api/health", { cache: "no-store" });
-        if (!res.ok) throw new Error();
-
-        setWifiLevel(4); // Connexion stable
-      } catch {
-        setWifiLevel(2); // Réseau OK mais API KO
-      }
-    };
-
-    const handleOnline = () => checkConnection();
-    const handleOffline = () => setWifiLevel(1);
-
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
-
-    checkConnection();
-    interval = setInterval(checkConnection, 10000);
-
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
-    };
-  }, []);
-
-  const statusText =
-    wifiLevel === 4
-      ? "Connexion stable"
-      : wifiLevel === 3
-      ? "Connexion correcte"
-      : wifiLevel === 2
-      ? "Connexion instable"
-      : "Aucune connexion Internet";
-
+const Header = () =>{
   return (
     <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
       {/* Bandeau connexion */}
@@ -109,23 +63,7 @@ const Header = () => {
           </div>
 
           <Box width={80}>
-            <img src={cam} alt="caméra" className="-scale-x-100" />{" "}
-            <Grid
-              container
-              justifyContent="center"
-              alignItems="center"
-              gap={1}
-              sx={{ py: 0.8 }}
-              position={"absolute"}
-              top={1}
-              right={10}
-            >
-              {wifiLevel <= 1 ? (
-                <WifiOffIcon size={"15px"} color="red" />
-              ) : (
-                <WifiBars level={wifiLevel} />
-              )}
-            </Grid>
+            <img src={cam} alt="caméra" className="-scale-x-100" />
           </Box>
         </div>
       </div>

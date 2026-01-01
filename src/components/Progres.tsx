@@ -22,7 +22,7 @@ export default function Progres({ show }: ProgresProps) {
       alignItems="center"
       zIndex={100}
       sx={{
-        backgroundColor: "rgba(0, 0, 0, 0.45)",
+        backgroundColor: "rgba(0, 0, 0, 0)",
         backdropFilter: "blur(6px)",
         WebkitBackdropFilter: "blur(6px)",
       }}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Package, TrendingUp, UserCheck, Plus } from "lucide-react";
+import { Package, TrendingUp, UserCheck, Plus, RefreshCw } from "lucide-react";
 import Header from "@/components/Header";
 import StatCard from "@/components/StatCard";
 import SearchBar from "@/components/SearchBar";
@@ -14,9 +14,8 @@ import Progres from "@/components/Progres";
 import { Grid } from "@mui/material";
 
 /* ================= API ================= */
-const API_URL = import.meta.env.DEV
-  ? "/api"
-  : "https://script.google.com/macros/s/AKfycbxdpPxqHw4eC_pndM5exhYIGKuSSpMJ-3CdyZYS3Agge35vBF9QvvP-DGjVs-zUf1Is/exec";
+const API_URL =
+  "https://script.google.com/macros/s/AKfycbwzATj2nIFTZb7Ptb60cXoWbjtVV0DHYQkUnnCLqhlNaps1yStrDxuk7Ql9Wx954oFY/exec";
 
 const STORAGE_KEY = "equipment_data_v1";
 
@@ -35,6 +34,7 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const [editingEquipment, setEditingEquipment] =
     useState<Equipment | null>(null);
+  const [showRefresh, setShowRefresh] = useState(false); // Pour l'icône scroll
 
   /* ================= LOAD LOCAL STORAGE ================= */
   useEffect(() => {
@@ -66,7 +66,7 @@ const Index = () => {
       if (!parsedLocal || !isSameData(parsedLocal, reversedData)) {
         setEquipment(reversedData);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(reversedData));
-
+        setShow(false);
         toast({
           title: "Synchronisation",
           description: "Données mises à jour depuis le serveur",
@@ -122,12 +122,20 @@ const Index = () => {
         .includes(searchTerm.toLowerCase());
 
       const matchesResponsable =
-        responsableFilter === "all" ||
-        item.responsable === responsableFilter;
+        responsableFilter === "all" || item.responsable === responsableFilter;
 
       return matchesSearch && matchesResponsable;
     });
   }, [equipment, searchTerm, responsableFilter]);
+
+  /* ================= SCROLL ================= */
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowRefresh(window.scrollY > 300);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   /* ================= LOADING ================= */
   if (loading) {
@@ -143,6 +151,17 @@ const Index = () => {
   return (
     <>
       <Progres show={show} />
+
+      {/* Bouton flottant pour actualiser */}
+      {showRefresh && (
+        <button
+          onClick={fetchData}
+          className="fixed bottom-6 right-6 bg-white shadow-lg p-3 rounded-full flex items-center justify-center hover:bg-gray-100 transition"
+          title="Actualiser"
+        >
+          <RefreshCw className="h-6 w-6 text-gray-700 animate-spin-slow" />
+        </button>
+      )}
 
       <div className="min-h-screen bg-background gradient-hero">
         <Header />
