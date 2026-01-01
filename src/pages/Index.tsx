@@ -1,7 +1,14 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
-import { Package, TrendingUp, UserCheck, Plus, RefreshCw, CheckCircle } from "lucide-react";
+import {
+  Package,
+  TrendingUp,
+  UserCheck,
+  Plus,
+  RefreshCw,
+  CheckCircle,
+} from "lucide-react";
 import Header from "@/components/Header";
 import StatCard from "@/components/StatCard";
 import SearchBar from "@/components/SearchBar";
@@ -81,7 +88,7 @@ const Index = () => {
         setEquipment(reversedData);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(reversedData));
         setShowSuccess(true);
-        setShow(false)
+        setShow(false);
         setMessage("Données mises à jour");
       }
     } catch (error) {
@@ -145,7 +152,7 @@ const Index = () => {
       0
     );
 
-    return { total, totalPret, totalEndommage ,totalUse};
+    return { total, totalPret, totalEndommage, totalUse };
   }, [equipment]);
 
   /* ================= FILTER ================= */
@@ -218,7 +225,18 @@ const Index = () => {
               </div>
 
               <Button
-                style={{ background: "#6B6C33" }}
+                style={{
+                  background: "#6B6C33",
+                  transition: "background 0.3s",
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background =
+                    "#7C7D3D"; // couleur hover
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background =
+                    "#929439ff"; // couleur normale
+                }}
                 onClick={() => {
                   setEditingEquipment(null);
                   setIsModalOpen(true);

@@ -142,6 +142,11 @@ const EquipmentModal = ({
       setIsLoading(false);
     }
   };
+  useEffect(() => {
+    if (formData.preteur === "" && formData.pret !== 0) {
+      setFormData((prev) => ({ ...prev, pret: 0 }));
+    }
+  }, [formData.preteur]);
 
   return (
     <Dialog open={isOpen} onOpenChange={isLoading ? undefined : onClose}>
@@ -168,7 +173,9 @@ const EquipmentModal = ({
         <form onSubmit={handleSubmit} className="space-y-6">
           <Grid container columnSpacing={4} direction={"row"}>
             <Grid container size={{ xs: 9 }} gap={1} direction={"column"}>
-              <Label>Nom du matériel</Label>
+              <Label>
+                Nom du matériel <span style={{ color: "red" }}>*</span>
+              </Label>
               <Input
                 value={formData.name}
                 onChange={(e) =>
@@ -178,7 +185,9 @@ const EquipmentModal = ({
               />
             </Grid>
             <Grid container size={{ xs: 3 }} gap={1} direction={"column"}>
-              <Label>Total</Label>
+              <Label>
+                Total <span style={{ color: "red" }}>*</span>
+              </Label>
               <Input value={formData.totalQuantity} disabled />
             </Grid>
           </Grid>
@@ -232,7 +241,12 @@ const EquipmentModal = ({
               />
             </Grid>
             <Grid container size={{ xs: 3 }} gap={1} direction={"column"}>
-              <Label>Qté prêt</Label>
+              <Label>
+                Qté prêt{" "}
+                {formData.preteur != "" && (
+                  <span style={{ color: "red" }}>*</span>
+                )}
+              </Label>
               <Input
                 type="number"
                 min={0}
@@ -243,7 +257,7 @@ const EquipmentModal = ({
                     pret: Number(e.target.value) || 0,
                   })
                 }
-                disabled={isLoading}
+                disabled={isLoading || formData.preteur === ""}
               />
             </Grid>
           </Grid>
@@ -280,7 +294,15 @@ const EquipmentModal = ({
               Annuler
             </Button>
 
-            <Button type="submit" disabled={isLoading}>
+            <Button
+              type="submit"
+              disabled={
+                isLoading ||
+                formData.totalQuantity <= 0 ||
+                formData.name === "" ||
+                (formData.preteur !== "" && formData.pret === 0)
+              }
+            >
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
