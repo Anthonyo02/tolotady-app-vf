@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import { Package, TrendingUp, UserCheck, Plus, RefreshCw } from "lucide-react";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { Package, TrendingUp, UserCheck, Plus, RefreshCw, CheckCircle } from "lucide-react";
 import Header from "@/components/Header";
 import StatCard from "@/components/StatCard";
 import SearchBar from "@/components/SearchBar";
@@ -12,6 +12,7 @@ import { Equipment } from "@/types/inventory";
 import { toast } from "@/hooks/use-toast";
 import Progres from "@/components/Progres";
 import { Grid } from "@mui/material";
+import { ToastSuccess } from "@/components/toast/toastS";
 
 /* ================= API ================= */
 const API_URL =
@@ -29,14 +30,25 @@ const Index = () => {
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [responsableFilter, setResponsableFilter] = useState("all");
+  const [message, setMessage] = useState("Success");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [show, setShow] = useState(false);
+  const [show, setShow] = useState(true);
+  const [showSuccess, setShowSuccess] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [editingEquipment, setEditingEquipment] =
-    useState<Equipment | null>(null);
-  const [showRefresh, setShowRefresh] = useState(false); // Pour l'icône scroll
+  const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(
+    null
+  );
 
-  /* ================= LOAD LOCAL STORAGE ================= */
+  /* ===== Pull to Refresh states ===== */
+  const startY = useRef(0);
+  const pulling = useRef(false);
+
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const MAX_PULL = 80;
+
+  /* ================= LOAD LOCAL ================= */
   useEffect(() => {
     const localData = localStorage.getItem(STORAGE_KEY);
     if (localData) {
@@ -62,20 +74,23 @@ const Index = () => {
 
       const localData = localStorage.getItem(STORAGE_KEY);
       const parsedLocal = localData ? JSON.parse(localData) : null;
+      setShow(false);
+      setMessage("Données mises à jour");
 
       if (!parsedLocal || !isSameData(parsedLocal, reversedData)) {
         setEquipment(reversedData);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(reversedData));
-        setShow(false);
-        toast({
-          title: "Synchronisation",
-          description: "Données mises à jour depuis le serveur",
-        });
+        setShowSuccess(true);
+        setShow(false)
+        setMessage("Données mises à jour");
       }
     } catch (error) {
       console.error("Erreur fetch:", error);
     } finally {
+      setShow(false);
+      setIsRefreshing(false);
       setLoading(false);
+      setShowSuccess(true);
     }
   };
 
@@ -83,15 +98,32 @@ const Index = () => {
     fetchData();
   }, []);
 
-  /* ================= ADD / EDIT ================= */
-  const handleAddNew = () => {
-    setEditingEquipment(null);
-    setIsModalOpen(true);
+  /* ================= Pull To Refresh ================= */
+  const onTouchStart = (e: React.TouchEvent) => {
+    if (window.scrollY === 0) {
+      startY.current = e.touches[0].clientY;
+      pulling.current = true;
+    }
   };
 
-  const handleEdit = (item: Equipment) => {
-    setEditingEquipment(item);
-    setIsModalOpen(true);
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (!pulling.current) return;
+
+    const distance = e.touches[0].clientY - startY.current;
+    if (distance > 0) {
+      setPullDistance(Math.min(distance, MAX_PULL));
+    }
+  };
+
+  const onTouchEnd = async () => {
+    if (pullDistance >= 10) {
+      setIsRefreshing(true);
+      setShow(true);
+      await fetchData();
+    }
+
+    setPullDistance(0);
+    pulling.current = false;
   };
 
   /* ================= STATS ================= */
@@ -100,18 +132,20 @@ const Index = () => {
       (acc, i) => acc + Number(i.totalQuantity || 0),
       0
     );
-
+    const totalUse = equipment.reduce(
+      (acc, i) => acc + Number(i.utiliser || 0),
+      0
+    );
     const totalPret = equipment.reduce(
       (acc, i) => acc + Number(i.pret || 0),
       0
     );
-
     const totalEndommage = equipment.reduce(
       (acc, i) => acc + Number(i.endommagé || 0),
       0
     );
 
-    return { total, totalPret, totalEndommage };
+    return { total, totalPret, totalEndommage ,totalUse};
   }, [equipment]);
 
   /* ================= FILTER ================= */
@@ -128,21 +162,12 @@ const Index = () => {
     });
   }, [equipment, searchTerm, responsableFilter]);
 
-  /* ================= SCROLL ================= */
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowRefresh(window.scrollY > 300);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
   /* ================= LOADING ================= */
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         Chargement...
-        <Progres show={show} />
+        <Progres show />
       </div>
     );
   }
@@ -151,19 +176,34 @@ const Index = () => {
   return (
     <>
       <Progres show={show} />
+      <ToastSuccess
+        message={message}
+        show={showSuccess}
+        setShow={setShowSuccess}
+      />
+      {/* Pull to refresh icon */}
+      <div
+        className="fixed top-0 left-0 right-0 flex justify-center pointer-events-none [z-index:99]"
+        style={{
+          transform: `translateY(${pullDistance - 50}px)`,
+          transition: pulling.current ? "none" : "transform 0.3s ease",
+        }}
+      >
+        <div className="bg-white shadow-lg rounded-full p-2">
+          <RefreshCw
+            className={`h-3 w-3 text-gray-600 ${
+              isRefreshing ? "animate-spin" : ""
+            }`}
+          />
+        </div>
+      </div>
 
-      {/* Bouton flottant pour actualiser */}
-      {showRefresh && (
-        <button
-          onClick={fetchData}
-          className="fixed bottom-6 right-6 bg-white shadow-lg p-3 rounded-full flex items-center justify-center hover:bg-gray-100 transition"
-          title="Actualiser"
-        >
-          <RefreshCw className="h-6 w-6 text-gray-700 animate-spin-slow" />
-        </button>
-      )}
-
-      <div className="min-h-screen bg-background gradient-hero">
+      <div
+        className="min-h-screen bg-background gradient-hero"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
         <Header />
 
         <main className="container mx-auto px-6 py-8">
@@ -179,20 +219,28 @@ const Index = () => {
 
               <Button
                 style={{ background: "#6B6C33" }}
-                onClick={handleAddNew}
+                onClick={() => {
+                  setEditingEquipment(null);
+                  setIsModalOpen(true);
+                }}
                 disabled={!navigator.onLine}
-                title={!navigator.onLine ? "Mode offline" : ""}
               >
                 <Plus className="mr-2 h-4 w-4 text-white" />
                 <span className="text-white">Ajouter un matériel</span>
               </Button>
             </Grid>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8">
               <StatCard
                 title="Total matériel"
                 value={stats.total}
                 icon={Package}
+                variant="yellow"
+              />
+              <StatCard
+                title="Utiliser"
+                value={stats.totalUse}
+                icon={CheckCircle}
                 variant="success"
               />
               <StatCard
@@ -224,7 +272,10 @@ const Index = () => {
               reload={fetchData}
               setShow={setShow}
               show={show}
-              onEdit={handleEdit}
+              onEdit={(item) => {
+                setEditingEquipment(item);
+                setIsModalOpen(true);
+              }}
             />
           </section>
         </main>

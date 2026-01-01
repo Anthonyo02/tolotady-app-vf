@@ -1,45 +1,51 @@
-import React, { useEffect, useState } from "react";
+import { Grid } from "@mui/material";
+import React, { useEffect } from "react";
 
 interface ToastSuccessProps {
   message: string;
-  onClose?: () => void;
+  show: boolean;
+  setShow: React.Dispatch<React.SetStateAction<boolean>>;
   duration?: number;
 }
 
 export const ToastSuccess: React.FC<ToastSuccessProps> = ({
   message,
-  onClose,
+  show,
+  setShow,
   duration = 5000,
 }) => {
-  const [visible, setVisible] = useState(true);
-
+  // ⏱ fermeture automatique
   useEffect(() => {
-    if (!onClose) return;
+    if (!show) return;
 
     const timer = setTimeout(() => {
-      setVisible(false);
-      setTimeout(onClose, 300); // attendre la fin de l'animation avant fermeture
+      setShow(false);
     }, duration);
 
     return () => clearTimeout(timer);
-  }, [duration, onClose]);
+  }, [show, duration]);
 
-  if (!visible) return null;
+  if (!show) return null;
 
   return (
-    <div className="fixed top-4 right-4 bg-green-500 text-white px-4 py-3 rounded shadow-lg flex items-center gap-2 transition-opacity duration-300 ease-in-out">
-      <span>{message}</span>
-      {onClose && (
+    <Grid
+      container
+      justifyContent="flex-end"
+      position="fixed"
+      bottom={20}
+      right={40}
+      zIndex={1300}
+    >
+      <div className="bg-transparent border border-green-500 text-green-600 px-4 py-3 rounded-lg shadow-md flex items-center gap-2 transition-opacity duration-300 ease-in-out">
+        <span>{message}</span>
+
         <button
-          onClick={() => {
-            setVisible(false);
-            setTimeout(onClose, 300);
-          }}
-          className="ml-2 font-bold text-lg hover:text-green-200"
+          onClick={() => setShow(false)}
+          className="ml-2 font-bold text-lg hover:text-green-800"
         >
           ×
         </button>
-      )}
-    </div>
+      </div>
+    </Grid>
   );
 };

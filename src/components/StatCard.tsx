@@ -5,23 +5,39 @@ interface StatCardProps {
   title: string;
   value: number;
   icon: LucideIcon;
-  variant?: "success" | "warning" | "error";
+  variant?: "success" | "warning" | "error" | "yellow";
   description?: string;
 }
 
-const StatCard = ({ title, value, icon: Icon, variant = "success", description }: StatCardProps) => {
-  // ✅ Couleur de la bordure
+const StatCard = ({
+  title,
+  value,
+  icon: Icon,
+  variant = "success",
+  description,
+}: StatCardProps) => {
+  // 🎨 Bordure
   const variantStyles = {
-    success: "border-[#6B6C33]",
+    success: "border-green-500/30",
     warning: "border-orange-500/30",
+    yellow: "border-yellow-500/30",
     error: "border-red-500/30",
   };
 
-  // ✅ Couleur de l'icône
+  // 🎯 Icône
   const iconStyles = {
-    success: "text-[#6B6C33]",
+    success: "text-green-500",
     warning: "text-orange-500",
+    yellow: "text-yellow-500",
     error: "text-red-500",
+  };
+
+  // ✨ Glow décoratif
+  const glowStyles = {
+    success: "bg-green-500",
+    warning: "bg-orange-500",
+    yellow: "bg-yellow-500",
+    error: "bg-red-500",
   };
 
   return (
@@ -39,23 +55,17 @@ const StatCard = ({ title, value, icon: Icon, variant = "success", description }
             <p className="text-xs text-muted-foreground">{description}</p>
           )}
         </div>
-        <div
-          className={cn(
-            "rounded-lg bg-secondary p-3",
-            iconStyles[variant]
-          )}
-        >
+
+        <div className={cn("rounded-lg bg-secondary p-3", iconStyles[variant])}>
           <Icon className="h-6 w-6" />
         </div>
       </div>
-      
-      {/* Decorative gradient */}
+
+      {/* 🌈 Decorative glow */}
       <div
         className={cn(
           "absolute -bottom-10 -right-10 h-32 w-32 rounded-full blur-3xl opacity-20",
-          variant === "warning" && "bg-[#6B6C33]",
-          variant === "error" && "bg-red-500",
-          variant === "success" && "bg-green-500"
+          glowStyles[variant]
         )}
       />
     </div>

@@ -250,7 +250,7 @@ const deleteItem = async () => {
                     className="text-destructive"
                     onClick={() => setDeleteId(item.id)}
                   >
-                    <Trash2 className="mr-2 h-4 w-4" /> Supprimer
+                    <Trash2 className="mr-2 mt-2 h-4 w-4" /> Supprimer
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
