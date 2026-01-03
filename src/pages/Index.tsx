@@ -9,9 +9,11 @@ import {
   RefreshCw,
   CheckCircle,
 } from "lucide-react";
+import { SplashScreen } from "@capacitor/splash-screen";
 import Header from "@/components/Header";
 import StatCard from "@/components/StatCard";
 import SearchBar from "@/components/SearchBar";
+import SortieTerrainModal from "@/components/SortieTerrainModal";
 import EquipmentTable from "@/components/EquipmentTable";
 import EquipmentModal from "@/components/EquipmentModal";
 import { Button } from "@/components/ui/button";
@@ -37,6 +39,7 @@ const Index = () => {
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [responsableFilter, setResponsableFilter] = useState("all");
+  const [isSortieModalOpen, setIsSortieModalOpen] = useState(false);
   const [message, setMessage] = useState("Success");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [show, setShow] = useState(true);
@@ -46,7 +49,13 @@ const Index = () => {
     null
   );
 
-  /* ===== Pull to Refresh states ===== */
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      SplashScreen.hide();
+    }, 6000);
+
+    return () => clearTimeout(timer); // nettoyage au démontage
+  }, []);
   const startY = useRef(0);
   const pulling = useRef(false);
 
@@ -60,10 +69,11 @@ const Index = () => {
     const localData = localStorage.getItem(STORAGE_KEY);
     if (localData) {
       try {
-        setShow(false)
+        setShow(false);
         setEquipment(JSON.parse(localData));
+        
       } catch (e) {
-        setShow(false)
+        setShow(false);
         console.error("Erreur parsing localStorage", e);
       }
     }
@@ -84,8 +94,6 @@ const Index = () => {
       const localData = localStorage.getItem(STORAGE_KEY);
       const parsedLocal = localData ? JSON.parse(localData) : null;
       setShow(false);
-      // setShowSuccess(true)
-      // setMessage("Données misour");
 
       if (!parsedLocal || !isSameData(parsedLocal, reversedData)) {
         setEquipment(reversedData);
@@ -96,12 +104,11 @@ const Index = () => {
       }
     } catch (error) {
       console.error("Erreur fetch:", error);
-      setShow(false)
+      setShow(false);
     } finally {
       setShow(false);
       setIsRefreshing(false);
       setLoading(false);
-      // setShowSuccess(true);
     }
   };
 
@@ -109,7 +116,6 @@ const Index = () => {
     fetchData();
   }, []);
 
-  /* ================= Pull To Refresh ================= */
   const onTouchStart = (e: React.TouchEvent) => {
     if (window.scrollY === 0) {
       startY.current = e.touches[0].clientY;
@@ -235,19 +241,27 @@ const Index = () => {
                 }}
                 disabled={!navigator.onLine}
                 className={`
-    flex items-center px-4 py-2 rounded 
-    text-white font-medium transition-colors duration-300
-    ${
-      navigator.onLine
-        ? "bg-[#6B6C33] hover:bg-[#7C7D3D]" // en ligne → couleur normale + hover
-        : "bg-gray-400 cursor-not-allowed hover:bg-gray-400"
-    } // hors ligne → grisé
-  `}
+                  flex items-center px-4 py-2 rounded 
+                  text-white font-medium transition-colors duration-300
+                  ${
+                    navigator.onLine
+                      ? "bg-[#6B6C33] hover:bg-[#7C7D3D]" // en ligne → couleur normale + hover
+                      : "bg-gray-400 cursor-not-allowed hover:bg-gray-400"
+                  } // hors ligne → grisé
+                `}
               >
                 <Plus className="mr-2 h-4 w-4" />
                 <span>
                   {navigator.onLine ? "Ajouter un matériel" : "Hors ligne"}
                 </span>
+              </Button>
+              <Button
+                onClick={() => setIsSortieModalOpen(true)}
+                variant="outline"
+                className="flex items-center"
+              >
+                <Package className="mr-2 h-4 w-4" />
+                Sortie terrain
               </Button>
             </Grid>
 
@@ -300,7 +314,6 @@ const Index = () => {
             />
           </section>
         </main>
-
         <EquipmentModal
           isOpen={isModalOpen}
           equipment={editingEquipment}
@@ -310,6 +323,12 @@ const Index = () => {
           }}
           reload={fetchData}
           setShow={setShow}
+        />
+        <SortieTerrainModal
+          open={isSortieModalOpen}
+          onClose={() => setIsSortieModalOpen(false)}
+          stock={equipment}
+          setShow={setShowSuccess}
         />
       </div>
     </>

@@ -1,9 +1,19 @@
-import type { CapacitorConfig } from '@capacitor/cli';
+import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.tolotady.inv',
-  appName: 'tolotady-inv',
-  webDir: 'dist'
+  appId: 'com.example.app',
+  appName: 'T~T Stock',
+  webDir: 'dist',
+
+ plugins: {
+  SplashScreen: {
+    launchShowDuration: 0,
+    backgroundColor: '#26A69A',
+    androidScaleType: 'CROP',
+    showSpinner: false
+  }
+}
+
 };
 
 export default config;
