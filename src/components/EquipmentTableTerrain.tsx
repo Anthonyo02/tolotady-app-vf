@@ -26,7 +26,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Skeleton } from "@mui/material";
+import { Skeleton, Typography } from "@mui/material";
 import { TerrainItem } from "@/types/inventory";
 import TerrainSearchBar from "./TerrainSearchBar";
 
@@ -60,6 +60,10 @@ export default function EquipmentTableTerrain({
   const [responsableFilter, setResponsableFilter] = useState("all");
   const [equipeFilter, setEquipeFilter] = useState("all");
   const [sortDate, setSortDate] = useState<"recent" | "ancien">("recent");
+  const [selectedTerrain, setSelectedTerrain] = useState<TerrainItem | null>(
+    null
+  );
+  const [viewOpen, setViewOpen] = useState(false);
 
   // helper pour string | string[] → string[]
   const toStringArray = (value?: string | string[]): string[] => {
@@ -103,7 +107,17 @@ export default function EquipmentTableTerrain({
         })
     );
   }, [data, searchTerm, responsableFilter, equipeFilter, sortDate]);
-
+  const normalizeMateriel = (
+    m?: string | (string | { name?: string })[]
+  ): string[] => {
+    if (!m) return [];
+    if (typeof m === "string") return m.split(",").map((s) => s.trim());
+    if (Array.isArray(m))
+      return m
+        .map((x) => (typeof x === "string" ? x : x?.name ?? String(x)))
+        .map((s) => s.trim());
+    return [];
+  };
   const remove = async (id: any) => {
     try {
       const res = await fetch(TERRAIN_URL, {
@@ -232,7 +246,18 @@ export default function EquipmentTableTerrain({
                         <MoreHorizontal className="w-4 h-4" />
                       </Button>
                     </DropdownMenuTrigger>
+
+                    {/* ✅ Tous les MenuItem sont ici */}
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setSelectedTerrain(item);
+                          setViewOpen(true);
+                        }}
+                      >
+                        <Package className="mr-2 h-4 w-4" /> Voir
+                      </DropdownMenuItem>
+
                       <DropdownMenuItem
                         onClick={() => {
                           onEditTerrain(item);
@@ -240,6 +265,7 @@ export default function EquipmentTableTerrain({
                       >
                         <Pencil className="mr-2 h-4 w-4" /> Modifier
                       </DropdownMenuItem>
+
                       <DropdownMenuItem
                         className="text-destructive"
                         onClick={() => {
@@ -280,10 +306,21 @@ export default function EquipmentTableTerrain({
                     <MoreHorizontal className="w-4 h-4" />
                   </Button>
                 </DropdownMenuTrigger>
+
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setSelectedTerrain(item);
+                      setViewOpen(true);
+                    }}
+                  >
+                    <Package className="mr-2 h-4 w-4" /> Voir
+                  </DropdownMenuItem>
+
                   <DropdownMenuItem onClick={() => onEditTerrain(item)}>
                     <Pencil className="mr-2 h-4 w-4" /> Modifier
                   </DropdownMenuItem>
+
                   <DropdownMenuItem
                     className="text-destructive"
                     onClick={() => {
@@ -362,6 +399,101 @@ export default function EquipmentTableTerrain({
               )}
             </Button>
           </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={viewOpen} onOpenChange={setViewOpen}>
+        <AlertDialogContent className="max-w-lg max-h-[80vh] mx-auto rounded-2xl bg-[#616637] text-white shadow-2xl overflow-auto">
+          {/* HEADER */}
+          <div className="p-4 border-b border-white/20">
+            <Typography variant="h6" fontWeight="bold">
+              Sortie terrain
+            </Typography>
+
+            <div className="mt-1 flex flex-col gap-0.5 text-white/80 text-sm">
+              <span>
+                {selectedTerrain && formatLongDate(selectedTerrain.date)}
+              </span>
+              <span className="font-medium">{selectedTerrain?.lieu}</span>
+            </div>
+          </div>
+
+          {/* BODY */}
+          <div className="p-4 space-y-3 text-sm">
+            {/* RESPONSABLE & ÉQUIPE */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="bg-white/10 rounded-xl p-2">
+                <span className="text-xs text-white/70">Responsable</span>
+                <Badge className="mt-1 bg-[#A6A867] text-white block w-fit text-xs px-2 py-0.5">
+                  {selectedTerrain?.responsable}
+                </Badge>
+              </div>
+
+              <div className="bg-white/10 rounded-xl p-2">
+                <span className="text-xs text-white/70">Équipe</span>
+                <Badge className="mt-1 bg-[#706639] text-white block w-fit text-xs px-2 py-0.5">
+                  {selectedTerrain?.equipe}
+                </Badge>
+              </div>
+            </div>
+
+            {/* DESCRIPTION */}
+            <div className="bg-white/5 rounded-xl p-2">
+              <span className="text-xs font-semibold text-white/80">
+                Description
+              </span>
+              <p className="mt-1 leading-relaxed">
+                {selectedTerrain?.description}
+              </p>
+            </div>
+
+            {/* MATÉRIELS */}
+            <div>
+              <span className="text-xs font-semibold text-white/80">
+                Matériels utilisés
+              </span>
+              <div className="flex flex-wrap gap-1 mt-1">
+                {(() => {
+                  const items = normalizeMateriel(selectedTerrain?.materiel);
+                  if (items.length === 0) return "-";
+
+                  return items.map((raw, i) => {
+                    const clean = raw
+                      .replace(/id\([0-9]+\)\s*;\s*/g, "")
+                      .trim();
+                    return (
+                      <Badge
+                        key={i}
+                        className="bg-[#F0E68C] text-gray-900 rounded-full px-2 py-0.5 text-xs"
+                      >
+                        {clean}
+                      </Badge>
+                    );
+                  });
+                })()}
+              </div>
+            </div>
+
+            {/* REMARQUE */}
+            <div className="bg-white/5 rounded-xl p-2">
+              <span className="text-xs font-semibold text-white/80">
+                Remarque
+              </span>
+              <p className="mt-1 text-white/70">
+                {selectedTerrain?.remarque || "-"}
+              </p>
+            </div>
+          </div>
+
+          {/* FOOTER */}
+          <div className="p-4 border-t border-white/20 flex justify-end">
+            <Button
+              onClick={() => setViewOpen(false)}
+              className="bg-[#A6A867] hover:bg-[#8f9256] text-white px-6 py-1.5 rounded-full text-sm"
+            >
+              Fermer
+            </Button>
+          </div>
         </AlertDialogContent>
       </AlertDialog>
     </>
