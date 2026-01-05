@@ -8,35 +8,53 @@ import {
   Plus,
   RefreshCw,
   CheckCircle,
+  Map,
 } from "lucide-react";
 import { SplashScreen } from "@capacitor/splash-screen";
 import Header from "@/components/Header";
 import StatCard from "@/components/StatCard";
 import SearchBar from "@/components/SearchBar";
-import SortieTerrainModal from "@/components/SortieTerrainModal";
 import EquipmentTable from "@/components/EquipmentTable";
 import EquipmentModal from "@/components/EquipmentModal";
+import EquipmentTableTerrain from "@/components/EquipmentTableTerrain";
 import { Button } from "@/components/ui/button";
-import { Equipment } from "@/types/inventory";
-import { toast } from "@/hooks/use-toast";
+import {
+  Equipment,
+  RESPONSABLES,
+  TerrainItem,
+  EquipementSelected,
+} from "@/types/inventory";
 import Progres from "@/components/Progres";
-import { Grid } from "@mui/material";
 import { ToastSuccess } from "@/components/toast/toastS";
+import { Grid } from "@mui/material";
+import { set } from "date-fns";
+import EquipmentModalTerrain from "@/components/EquipmentModalTerrain";
 
 /* ================= API ================= */
 const API_URL =
   "https://script.google.com/macros/s/AKfycbwzATj2nIFTZb7Ptb60cXoWbjtVV0DHYQkUnnCLqhlNaps1yStrDxuk7Ql9Wx954oFY/exec";
+const TERRAIN_URL =
+  "https://script.google.com/macros/s/AKfycbw6lWC7cRT6C-a65sf5Mb-XCKUsqWCdqdZeymX0ZrNPfaAoIcyfaJWhe0MgbFzcjBiz7w/exec";
 
-const STORAGE_KEY = "equipment_data_v1";
+const STORAGE_KEY_EQUIP = "equipment_data_v1";
+const STORAGE_KEY_TERRAIN = "terrain_data_v1";
+const STORAGE_KEY_TERRAINV2 = "terrain_data_v2";
 
 /* ================= UTILS ================= */
 const isOnline = () => navigator.onLine;
-const isSameData = (a: Equipment[], b: Equipment[]) =>
+const isSameDataMateriel = (a: any[], b: any[]) =>
   JSON.stringify(a) === JSON.stringify(b);
+
+const isSameDataTerrain = (a: unknown[], b: unknown[]) => {
+  if (a.length !== b.length) return false;
+  return a.every((item, i) => JSON.stringify(item) === JSON.stringify(b[i]));
+};
 
 /* ================= COMPONENT ================= */
 const Index = () => {
   const [equipment, setEquipment] = useState<Equipment[]>([]);
+  const [terrain, setTerrain] = useState<TerrainItem[]>([]);
+  const [localData, setLocalData] = useState<TerrainItem[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [responsableFilter, setResponsableFilter] = useState("all");
   const [isSortieModalOpen, setIsSortieModalOpen] = useState(false);
@@ -48,39 +66,43 @@ const Index = () => {
   const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(
     null
   );
+  const [editingTerrain, setEditingTerrain] = useState<TerrainItem | null>(
+    null
+  );
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      SplashScreen.hide();
-    }, 6000);
-
-    return () => clearTimeout(timer); // nettoyage au démontage
-  }, []);
   const startY = useRef(0);
   const pulling = useRef(false);
-
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
-
   const MAX_PULL = 80;
 
-  /* ================= LOAD LOCAL ================= */
+  /* ================= SPLASH SCREEN ================= */
   useEffect(() => {
-    const localData = localStorage.getItem(STORAGE_KEY);
-    if (localData) {
-      try {
-        setShow(false);
-        setEquipment(JSON.parse(localData));
-        
-      } catch (e) {
-        setShow(false);
-        console.error("Erreur parsing localStorage", e);
-      }
-    }
-    setLoading(false);
+    const timer = setTimeout(() => SplashScreen.hide(), 6000);
+    return () => clearTimeout(timer);
   }, []);
 
-  /* ================= FETCH API ================= */
+  /* ================= LOAD LOCAL ================= */
+
+  useEffect(() => {
+    try {
+      const localEquip = localStorage.getItem(STORAGE_KEY_EQUIP);
+      if (localEquip)
+        setEquipment(JSON.parse(localEquip)),
+          setLocalData(JSON.parse(localEquip));
+
+      const localTerrain = localStorage.getItem(STORAGE_KEY_TERRAIN);
+      if (localTerrain) setTerrain(JSON.parse(localTerrain));
+      setTerrain(JSON.parse(localTerrain));
+    } catch (err) {
+      console.error("Erreur parsing localStorage", err);
+    } finally {
+      setShow(false);
+      setLoading(false);
+    }
+  }, []);
+
+  /* ================= FETCH INVENTAIRE ================= */
   const fetchData = async () => {
     if (!isOnline()) return;
 
@@ -91,31 +113,60 @@ const Index = () => {
       const data: Equipment[] = await res.json();
       const reversedData = [...data].reverse();
 
-      const localData = localStorage.getItem(STORAGE_KEY);
+      const localData = localStorage.getItem(STORAGE_KEY_EQUIP);
       const parsedLocal = localData ? JSON.parse(localData) : null;
-      setShow(false);
 
-      if (!parsedLocal || !isSameData(parsedLocal, reversedData)) {
+      if (!parsedLocal || !isSameDataMateriel(parsedLocal, reversedData)) {
         setEquipment(reversedData);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(reversedData));
+        localStorage.setItem(STORAGE_KEY_EQUIP, JSON.stringify(reversedData));
+        setMessage("Données inventaire mises à jour");
         setShowSuccess(true);
-        setShow(false);
-        setMessage("Données mises à jour");
       }
-    } catch (error) {
-      console.error("Erreur fetch:", error);
-      setShow(false);
+    } catch (err) {
+      console.error("Erreur fetch inventaire:", err);
     } finally {
       setShow(false);
       setIsRefreshing(false);
       setLoading(false);
     }
   };
+  const fetchDataTerrainV2 = async () => {
+    if (!isOnline()) return;
 
+    try {
+      const res = await fetch(TERRAIN_URL);
+      if (!res.ok) throw new Error("Erreur réseau");
+
+      const data: TerrainItem[] = await res.json();
+      const reversedData = [...data].reverse();
+
+      const localData = localStorage.getItem(STORAGE_KEY_TERRAIN);
+      const parsedLocal = localData ? JSON.parse(localData) : null;
+      if (!parsedLocal || !isSameDataTerrain(parsedLocal, reversedData)) {
+        setTerrain(reversedData);
+        localStorage.setItem(STORAGE_KEY_TERRAIN, JSON.stringify(reversedData));
+        setMessage("Données terrain mises à jour");
+        setShowSuccess(true);
+      }
+    } catch (err) {
+      console.error("Erreur fetch terrain:", err);
+    } finally {
+      setShow(false);
+      setIsRefreshing(false);
+      setLoading(false);
+    }
+  };
   useEffect(() => {
     fetchData();
+    fetchDataTerrainV2();
   }, []);
+  // useEffect(() => {
+  //   setEditingTerrain(null);
+  //   // console.log(editingTerrain);
+    
+  // }, [isSortieModalOpen]);
 
+  /* ================= PULL TO REFRESH ================= */
   const onTouchStart = (e: React.TouchEvent) => {
     if (window.scrollY === 0) {
       startY.current = e.touches[0].clientY;
@@ -125,11 +176,8 @@ const Index = () => {
 
   const onTouchMove = (e: React.TouchEvent) => {
     if (!pulling.current) return;
-
     const distance = e.touches[0].clientY - startY.current;
-    if (distance > 0) {
-      setPullDistance(Math.min(distance, MAX_PULL));
-    }
+    if (distance > 0) setPullDistance(Math.min(distance, MAX_PULL));
   };
 
   const onTouchEnd = async () => {
@@ -137,8 +185,8 @@ const Index = () => {
       setIsRefreshing(true);
       setShow(true);
       await fetchData();
+      await fetchDataTerrainV2();
     }
-
     setPullDistance(0);
     pulling.current = false;
   };
@@ -161,33 +209,31 @@ const Index = () => {
       (acc, i) => acc + Number(i.endommagé || 0),
       0
     );
-
-    return { total, totalPret, totalEndommage, totalUse };
+    return { total, totalUse, totalPret, totalEndommage };
   }, [equipment]);
 
   /* ================= FILTER ================= */
-  const filteredEquipment = useMemo(() => {
-    return equipment.filter((item) => {
-      const matchesSearch = item.name
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
-
-      const matchesResponsable =
-        responsableFilter === "all" || item.responsable === responsableFilter;
-
-      return matchesSearch && matchesResponsable;
-    });
-  }, [equipment, searchTerm, responsableFilter]);
+  const filteredEquipment = useMemo(
+    () =>
+      equipment.filter((item) => {
+        const matchesSearch = item.name
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase());
+        const matchesResponsable =
+          responsableFilter === "all" || item.responsable === responsableFilter;
+        return matchesSearch && matchesResponsable;
+      }),
+    [equipment, searchTerm, responsableFilter]
+  );
 
   /* ================= LOADING ================= */
-  if (loading) {
+  if (loading)
     return (
       <div className="min-h-screen flex items-center justify-center">
         Chargement...
         <Progres show />
       </div>
     );
-  }
 
   /* ================= RENDER ================= */
   return (
@@ -198,7 +244,8 @@ const Index = () => {
         show={showSuccess}
         setShow={setShowSuccess}
       />
-      {/* Pull to refresh icon */}
+
+      {/* Pull to refresh */}
       <div
         className="fixed top-0 left-0 right-0 flex justify-center pointer-events-none [z-index:99]"
         style={{
@@ -222,7 +269,6 @@ const Index = () => {
         onTouchEnd={onTouchEnd}
       >
         <Header />
-
         <main className="container mx-auto px-6 py-8">
           {/* Dashboard */}
           <section className="mb-12">
@@ -233,36 +279,24 @@ const Index = () => {
                   Vue d'ensemble de votre inventaire
                 </p>
               </div>
-
-              <Button
-                onClick={() => {
-                  setEditingEquipment(null);
-                  setIsModalOpen(true);
-                }}
-                disabled={!navigator.onLine}
-                className={`
-                  flex items-center px-4 py-2 rounded 
-                  text-white font-medium transition-colors duration-300
-                  ${
+              <Grid container columnSpacing={2}>
+                <Button
+                  onClick={() => {
+                    setEditingEquipment(null);
+                    setIsModalOpen(true);
+                  }}
+                  disabled={!navigator.onLine}
+                  size="sm"
+                  className={`flex items-center px-4 py-2 rounded text-white font-medium transition-colors duration-300 ${
                     navigator.onLine
-                      ? "bg-[#6B6C33] hover:bg-[#7C7D3D]" // en ligne → couleur normale + hover
+                      ? "bg-[#6B6C33] hover:bg-[#7C7D3D]"
                       : "bg-gray-400 cursor-not-allowed hover:bg-gray-400"
-                  } // hors ligne → grisé
-                `}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                <span>
+                  }`}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
                   {navigator.onLine ? "Ajouter un matériel" : "Hors ligne"}
-                </span>
-              </Button>
-              <Button
-                onClick={() => setIsSortieModalOpen(true)}
-                variant="outline"
-                className="flex items-center"
-              >
-                <Package className="mr-2 h-4 w-4" />
-                Sortie terrain
-              </Button>
+                </Button>
+              </Grid>
             </Grid>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8">
@@ -292,8 +326,6 @@ const Index = () => {
               />
             </div>
           </section>
-
-          {/* Inventory */}
           <section>
             <SearchBar
               searchTerm={searchTerm}
@@ -301,7 +333,6 @@ const Index = () => {
               responsableFilter={responsableFilter}
               onResponsableChange={setResponsableFilter}
             />
-
             <EquipmentTable
               equipment={filteredEquipment}
               reload={fetchData}
@@ -313,7 +344,36 @@ const Index = () => {
               }}
             />
           </section>
+          <Grid container justifyContent={"end"} my={3}>
+            <Button
+              size="sm"
+              onClick={() =>{ setIsSortieModalOpen(true);setEditingTerrain(null);}}
+              variant="default"
+              disabled={!navigator.onLine}
+              className={`flex items-center px-4 py-2 rounded text-white font-medium transition-colors duration-300 ${
+                navigator.onLine
+                  ? "bg-[#6B6C33] hover:bg-[#7C7D3D]"
+                  : "bg-gray-400 cursor-not-allowed hover:bg-gray-400"
+              }`}
+            >
+              <Map className="mr-2 h-4 w-4" />
+              Sortie terrain
+            </Button>
+          </Grid>
+          <section>
+            <EquipmentTableTerrain
+              data={terrain}
+              reload={fetchDataTerrainV2}
+              setShow={setShow}
+              show={show}
+              onEditTerrain={(item) => {
+                setEditingTerrain(item);
+                setIsSortieModalOpen(true);
+              }}
+            />
+          </section>
         </main>
+
         <EquipmentModal
           isOpen={isModalOpen}
           equipment={editingEquipment}
@@ -324,11 +384,15 @@ const Index = () => {
           reload={fetchData}
           setShow={setShow}
         />
-        <SortieTerrainModal
+
+        <EquipmentModalTerrain
           open={isSortieModalOpen}
+          equipement={equipment}
+          idEditTerrain={editingTerrain}
           onClose={() => setIsSortieModalOpen(false)}
-          stock={equipment}
-          setShow={setShowSuccess}
+          local={localData}
+          reLoad={fetchDataTerrainV2}
+          setShow={setShow}
         />
       </div>
     </>

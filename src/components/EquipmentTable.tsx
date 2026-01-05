@@ -38,7 +38,7 @@ interface Props {
 }
 
 const API_URL =
-  "https://script.google.com/macros/s/AKfycbwzATj2nIFTZb7Ptb60cXoWbjtVV0DHYQkUnnCLqhlNaps1yStrDxuk7Ql9Wx954oFY/exec";
+  "https://script.google.com/macros/s/AKfycbw6lWC7cRT6C-a65sf5Mb-XCKUsqWCdqdZeymX0ZrNPfaAoIcyfaJWhe0MgbFzcjBiz7w/exec";
 
 export default function EquipmentTable({
   equipment,
@@ -151,9 +151,9 @@ export default function EquipmentTable({
                 </TableCell>
 
                 <TableCell>
-                  <Grid container spacing={1} width={"70%"}>
+                  <Grid container spacing={1} >
                     {item.utiliser !== 0 && (
-                      <Grid size={{ xs: 12, md: 4 }}>
+                      <Grid size={{ xs: 12, md: 4}}>
                         <Badge
                           className="w-full h-10 justify-center"
                           variant="noentina"
@@ -164,7 +164,7 @@ export default function EquipmentTable({
                     )}
 
                     {item.pret !== 0 && (
-                      <Grid size={{ xs: 12, md: 4 }}>
+                      <Grid size={{ xs: 12, md: 4}}>
                         <Badge
                           className="w-full h-10 justify-center"
                           variant="nampindramina"
@@ -175,7 +175,7 @@ export default function EquipmentTable({
                     )}
 
                     {item.endommagé !== 0 && (
-                      <Grid size={{ xs: 12, md: 4 }}>
+                      <Grid size={{ xs: 12, md: 4}}>
                         <Badge
                           className="w-full h-10 justify-center"
                           variant="destructive"
@@ -274,7 +274,7 @@ export default function EquipmentTable({
               </Badge>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2" >
               {item.utiliser !== 0 && (
                 <Badge
                   className="w-full justify-center py-2"
